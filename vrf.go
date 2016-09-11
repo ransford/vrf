@@ -10,6 +10,38 @@ func usage() {
 	fmt.Printf("Usage: %s <host> <address>\n", os.Args[0])
 }
 
+func is_deliverable(host string, address string) (bool, error) {
+	deliverable := false
+
+	cli, err := smtp.Dial(host)
+	if err != nil {
+		return false, err
+	}
+	defer cli.Close()
+
+	err = cli.Mail("foo@mysite.com")
+	if err != nil {
+		return false, err
+	}
+
+	err = cli.Rcpt(address)
+	if err != nil {
+		return false, err
+	}
+
+	err = cli.Reset()
+	if err != nil {
+		return deliverable, err
+	}
+
+	err = cli.Quit()
+	if err != nil {
+		return deliverable, err
+	}
+
+	return deliverable, nil
+}
+
 func main() {
 	args := os.Args[1:]
 	if len(args) != 2 {
@@ -20,39 +52,16 @@ func main() {
 	host := fmt.Sprintf("%s:25", args[0])
 	address := args[1]
 
-	cli, err := smtp.Dial(host)
-
+	deliverable, err := is_deliverable(host, address)
 	if err != nil {
-		fmt.Println("Error", err)
-		os.Exit(2)
+		fmt.Println("Error:", err)
 	}
 
-	merr := cli.Mail("foo@mysite.com")
-	if merr != nil {
-		fmt.Println("Error", merr)
-		os.Exit(2)
-	}
-
-	rcpterr := cli.Rcpt(address)
-	if rcpterr != nil {
-		fmt.Printf("Address %s is probably invalid\n", address)
-		fmt.Printf("(Server said: %s)\n", rcpterr)
-		os.Exit(2)
+	if deliverable {
+		fmt.Println(address, "is deliverable")
+		os.Exit(0)
 	} else {
-		fmt.Printf("Address %s is valid\n", address)
+		fmt.Println(address, "is not deliverable")
+		os.Exit(1)
 	}
-
-	reseterr := cli.Reset()
-	if reseterr != nil {
-		fmt.Println("Error", reseterr)
-		os.Exit(2)
-	}
-
-	qerr := cli.Quit()
-	if qerr != nil {
-		fmt.Println("Error", qerr)
-		os.Exit(2)
-	}
-
-	cli.Close()
 }

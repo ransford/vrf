@@ -4,10 +4,20 @@ import (
 	"fmt"
 	"net/smtp"
 	"os"
+	"strings"
 )
 
 func usage() {
 	fmt.Printf("Usage: %s <host> <address>\n", os.Args[0])
+}
+
+func get_domain_from_address(address string) (domain string, err error) {
+	at := strings.LastIndex(address, "@")
+	if at < 0 {
+		return "", fmt.Errorf("Invalid domain")
+	} else {
+		return address[at+1:], nil
+	}
 }
 
 func is_deliverable(host string, address string) (bool, error) {

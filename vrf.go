@@ -38,6 +38,8 @@ func isDeliverable(host string, address string) (bool, error) {
 		log.Printf("Error on RCPT: %s\n", err)
 		return false, err
 	}
+
+	// If RCPT succeeded, the server thinks the address is deliverable
 	deliverable = true
 
 	err = cli.Reset()

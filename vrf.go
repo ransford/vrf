@@ -55,11 +55,17 @@ func isDeliverable(host string, address string) (bool, error) {
 	return deliverable, nil
 }
 
-func getMxFromDomain(domain string) (mxhost string, err error) {
+func firstMxFromDomain(domain string) (mxhost string, err error) {
 	mxs, err := net.LookupMX(domain)
+	if err != nil {
+		log.Printf("Error looking up MX record: %s\n", err)
+		return "", err
+	}
 	if len(mxs) == 0 {
 		return "", fmt.Errorf("No MX for domain")
 	}
+
+	// Return the first MX
 	return mxs[0].Host, nil
 }
 
@@ -80,7 +86,7 @@ func main() {
 	}
 	log.Printf("Domain: %s\n", domain)
 
-	mxHost, err := getMxFromDomain(domain)
+	mxHost, err := firstMxFromDomain(domain)
 	if err != nil {
 		log.Fatal("Error: cannot get domain from address.")
 	}

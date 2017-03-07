@@ -9,16 +9,15 @@ import (
 	"strings"
 )
 
-func get_domain_from_address(address string) (domain string, err error) {
+func getDomainFromAddress(address string) (domain string, err error) {
 	at := strings.LastIndex(address, "@")
 	if at < 0 {
 		return "", fmt.Errorf("Invalid domain")
-	} else {
-		return address[at+1:], nil
 	}
+	return address[at+1:], nil
 }
 
-func is_deliverable(host string, address string) (bool, error) {
+func isDeliverable(host string, address string) (bool, error) {
 	deliverable := false
 
 	cli, err := smtp.Dial(host)
@@ -56,7 +55,7 @@ func is_deliverable(host string, address string) (bool, error) {
 	return deliverable, nil
 }
 
-func get_mx_from_domain(domain string) (mxhost string, err error) {
+func getMxFromDomain(domain string) (mxhost string, err error) {
 	mxs, err := net.LookupMX(domain)
 	if len(mxs) == 0 {
 		return "", fmt.Errorf("No MX for domain")
@@ -75,21 +74,21 @@ func main() {
 	address := args[0]
 	log.Printf("Address: %s\n", address)
 
-	domain, err := get_domain_from_address(address)
+	domain, err := getDomainFromAddress(address)
 	if err != nil {
 		log.Fatal("Error: cannot get domain from address.")
 	}
 	log.Printf("Domain: %s\n", domain)
 
-	mx_host, err := get_mx_from_domain(domain)
+	mxHost, err := getMxFromDomain(domain)
 	if err != nil {
 		log.Fatal("Error: cannot get domain from address.")
 	}
-	log.Printf("MX host: %s\n", mx_host)
+	log.Printf("MX host: %s\n", mxHost)
 
-	host := fmt.Sprintf("%s:25", mx_host)
+	host := fmt.Sprintf("%s:25", mxHost)
 
-	deliverable, err := is_deliverable(host, address)
+	deliverable, err := isDeliverable(host, address)
 	if err != nil {
 		log.Fatalf("Error checking deliverability: %s\n", err)
 	}

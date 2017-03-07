@@ -16,20 +16,20 @@ func TestAddressParse(t *testing.T) {
 		{"bl@h@blah@blah.com", "blah.com"},
 	}
 	for _, tcase := range addrs {
-		_, err := get_domain_from_address(tcase.addr)
+		_, err := getDomainFromAddress(tcase.addr)
 		if err != nil {
 			t.Fatal("Error should be nil, but is", err)
 		}
 	}
 
 	/* Errors on bad addresses */
-	bad_addrs := []string{
+	badAddrs := []string{
 		"foo",
 		"foo.com",
 		"",
 	}
-	for _, badaddr := range bad_addrs {
-		_, err := get_domain_from_address(badaddr)
+	for _, badaddr := range badAddrs {
+		_, err := getDomainFromAddress(badaddr)
 		if err == nil {
 			t.Fatal("err is nil; shoul be non-nil")
 		}

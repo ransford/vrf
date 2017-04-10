@@ -24,13 +24,13 @@ What about `oiwperwer@google.com`?
 connects to the highest priority server in the list and goes partway through
 the process of delivering an email messsage.  Essentially:
 
-> Client: Hello `domain.com` mail server!
-> Server: Hello!
-> Client: I have email for user `bob@domain.com`.
-> Server: Sure, I'll accept it.  ***OR***  Sorry, no such address.
-> Client: Never mind.
-> Server: Fine, whatever.
-> Client: Bye!
-> Server: Bye.
+    > Client: Hello `domain.com` mail server!
+    > Server: Hello!
+    > Client: I have email for user `bob@domain.com`.
+    > Server: Sure, I'll accept it.  ***OR***  Sorry, no such address.
+    > Client: Never mind.
+    > Server: Fine, whatever.
+    > Client: Bye!
+    > Server: Bye.
 
 Technically speaking, `vrf` disconnects (politely, with `RSET`) after `MAIL`.

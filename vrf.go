@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/smtp"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -44,8 +45,14 @@ func isDeliverable(host string, address string) (bool, error) {
 	Trace.Printf("RCPT TO:<%s>", address)
 	err = cli.Rcpt(address)
 	if err != nil {
-		log.Printf("Error on RCPT: %s\n", err)
-		return false, err
+		rx := regexp.MustCompile("^(451|550) [0-9]\\.1\\.1")
+
+		// SMTP 550 X.1.1 means invalid address, but other errors mean other things
+		if !rx.MatchString(err.Error()) {
+			log.Printf("Error on RCPT: %s\n", err)
+			return false, err
+		}
+		return false, nil
 	}
 
 	// If RCPT succeeded, the server thinks the address is deliverable

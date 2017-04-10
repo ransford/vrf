@@ -1,13 +1,18 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/smtp"
 	"os"
 	"strings"
 )
+
+var Trace *log.Logger
 
 func getDomainFromAddress(address string) (domain string, err error) {
 	at := strings.LastIndex(address, "@")
@@ -20,19 +25,23 @@ func getDomainFromAddress(address string) (domain string, err error) {
 func isDeliverable(host string, address string) (bool, error) {
 	deliverable := false
 
+	Trace.Printf("Connecting...")
 	cli, err := smtp.Dial(host)
 	if err != nil {
 		log.Printf("Error on connect: %s\n", err)
 		return false, err
 	}
 	defer cli.Close()
+	Trace.Printf("Connected.")
 
+	Trace.Printf("MAIL FROM:<%s>", address)
 	err = cli.Mail(address)
 	if err != nil {
 		log.Printf("Error on MAIL: %s\n", err)
 		return false, err
 	}
 
+	Trace.Printf("RCPT TO:<%s>", address)
 	err = cli.Rcpt(address)
 	if err != nil {
 		log.Printf("Error on RCPT: %s\n", err)
@@ -42,12 +51,14 @@ func isDeliverable(host string, address string) (bool, error) {
 	// If RCPT succeeded, the server thinks the address is deliverable
 	deliverable = true
 
+	Trace.Printf("RSET")
 	err = cli.Reset()
 	if err != nil {
 		log.Printf("Error on RSET: %s\n", err)
 		return deliverable, err
 	}
 
+	Trace.Printf("QUIT")
 	err = cli.Quit()
 	if err != nil {
 		log.Printf("Error on QUIT: %s\n", err)
@@ -72,27 +83,44 @@ func firstMxFromDomain(domain string) (mxhost string, err error) {
 }
 
 func main() {
+	// Parse command-line flags
+	verbosePtr := flag.Bool("verbose", false, "Show verbose messages")
+	quietPtr := flag.Bool("quiet", false, "Quiet (no output)")
+	flag.Parse()
+
+	if *verbosePtr && *quietPtr {
+		log.Fatalf("Cannot be both quiet and verbose.")
+	}
+
+	// Set up verbose logging if required
+	var traceDest io.Writer
+	traceDest = ioutil.Discard
+	if *verbosePtr {
+		traceDest = os.Stderr
+	}
+	Trace = log.New(traceDest, "INFO: ", log.LstdFlags)
+
 	log.SetOutput(os.Stderr)
 
-	args := os.Args[1:]
+	args := flag.Args()
 	if len(args) != 1 {
 		log.Fatalf("Usage: %s <address>\n", os.Args[0])
 	}
 
 	address := args[0]
-	log.Printf("Address: %s\n", address)
+	Trace.Printf("Address: %s\n", address)
 
 	domain, err := getDomainFromAddress(address)
 	if err != nil {
 		log.Fatal("Error: cannot get domain from address.")
 	}
-	log.Printf("Domain: %s\n", domain)
+	Trace.Printf("Domain: %s\n", domain)
 
 	mxHost, err := firstMxFromDomain(domain)
 	if err != nil {
 		log.Fatal("Error: cannot get domain from address.")
 	}
-	log.Printf("MX host: %s\n", mxHost)
+	Trace.Printf("MX host: %s\n", mxHost)
 
 	host := fmt.Sprintf("%s:25", mxHost)
 
@@ -102,10 +130,14 @@ func main() {
 	}
 
 	if deliverable {
-		fmt.Println(address, "is deliverable")
+		if !*quietPtr {
+			fmt.Println(address, "is deliverable")
+		}
 		os.Exit(0)
 	} else {
-		fmt.Println(address, "is not deliverable")
+		if !*quietPtr {
+			fmt.Println(address, "is not deliverable")
+		}
 		os.Exit(1)
 	}
 }

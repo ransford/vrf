@@ -18,7 +18,7 @@ var Trace *log.Logger
 func getDomainFromAddress(address string) (string, error) {
 	at := strings.LastIndex(address, "@")
 	if at < 0 {
-		return "", fmt.Errorf("Invalid domain")
+		return "", fmt.Errorf("Cannot parse address")
 	}
 	return address[at+1:], nil
 }
@@ -78,11 +78,7 @@ func isDeliverable(host string, address string) (bool, error) {
 func firstMxFromDomain(domain string) (string, error) {
 	mxs, err := net.LookupMX(domain)
 	if err != nil {
-		log.Printf("Error looking up MX record: %s\n", err)
 		return "", err
-	}
-	if len(mxs) == 0 {
-		return "", fmt.Errorf("No MX for domain")
 	}
 
 	// Return the first MX
@@ -119,13 +115,13 @@ func main() {
 
 	domain, err := getDomainFromAddress(address)
 	if err != nil {
-		log.Fatal("Error: cannot get domain from address.")
+		log.Fatal(err)
 	}
 	Trace.Printf("Domain: %s\n", domain)
 
 	mxHost, err := firstMxFromDomain(domain)
 	if err != nil {
-		log.Fatal("Error: cannot get domain from address.")
+		log.Fatal(err)
 	}
 	Trace.Printf("MX host: %s\n", mxHost)
 
@@ -133,7 +129,7 @@ func main() {
 
 	deliverable, err := isDeliverable(host, address)
 	if err != nil {
-		log.Fatalf("Error checking deliverability: %s\n", err)
+		log.Fatal(err)
 	}
 
 	if deliverable {

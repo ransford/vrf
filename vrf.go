@@ -15,7 +15,7 @@ import (
 
 var Trace *log.Logger
 
-func getDomainFromAddress(address string) (domain string, err error) {
+func getDomainFromAddress(address string) (string, error) {
 	at := strings.LastIndex(address, "@")
 	if at < 0 {
 		return "", fmt.Errorf("Invalid domain")
@@ -75,7 +75,7 @@ func isDeliverable(host string, address string) (bool, error) {
 	return deliverable, nil
 }
 
-func firstMxFromDomain(domain string) (mxhost string, err error) {
+func firstMxFromDomain(domain string) (string, error) {
 	mxs, err := net.LookupMX(domain)
 	if err != nil {
 		log.Printf("Error looking up MX record: %s\n", err)

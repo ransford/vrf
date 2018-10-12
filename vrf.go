@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -11,8 +12,12 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
+var (
+	ErrTimeout = errors.New("Request timeout")
+)
 var Trace *log.Logger
 
 func getDomainFromAddress(address string) (string, error) {
@@ -23,18 +28,37 @@ func getDomainFromAddress(address string) (string, error) {
 	return address[at+1:], nil
 }
 
-func isDeliverable(host string, address string) (bool, error) {
+func isDeliverable(host string, address string, timeout ...time.Duration) (bool, error) {
 	deliverable := false
+	var conn net.Conn
+	var err error
 
 	Trace.Printf("Connecting...")
-	cli, err := smtp.Dial(host)
+	if len(timeout) > 0 {
+		// We use a different Dialer if timeout is provided
+		conn, err = net.DialTimeout("tcp", host, timeout[0])
+	} else {
+		conn, err = net.Dial("tcp", host)
+	}
+
+	if err != nil {
+		if err, ok := err.(net.Error); ok && err.Timeout() {
+			return false, ErrTimeout
+		}
+		return false, err
+	}
+
+	// We need the address without the port to create
+	// the instance of the client.
+	hostNoPort, _, _ := net.SplitHostPort(address)
+	cli, err := smtp.NewClient(conn, hostNoPort)
 	if err != nil {
 		log.Printf("Error on connect: %s\n", err)
 		return false, err
 	}
 	defer cli.Close()
-	Trace.Printf("Connected.")
 
+	Trace.Printf("Connected.")
 	Trace.Printf("MAIL FROM:<%s>", address)
 	err = cli.Mail(address)
 	if err != nil {
@@ -89,6 +113,7 @@ func main() {
 	// Parse command-line flags
 	verbosePtr := flag.Bool("verbose", false, "Show verbose messages")
 	quietPtr := flag.Bool("quiet", false, "Quiet (no output)")
+	timeoutPtr := flag.String("timeout", "", "Timeout after this duration (e.g. 3s)")
 	flag.Parse()
 
 	if *verbosePtr && *quietPtr {
@@ -126,8 +151,16 @@ func main() {
 	Trace.Printf("MX host: %s\n", mxHost)
 
 	host := fmt.Sprintf("%s:25", mxHost)
-
-	deliverable, err := isDeliverable(host, address)
+	var deliverable bool
+	if *timeoutPtr != "" {
+		timeout, err := time.ParseDuration(*timeoutPtr)
+		if err != nil {
+			log.Fatal("Invalid duration. Use something like 2s, 1m etc.")
+		}
+		deliverable, err = isDeliverable(host, address, timeout)
+	} else {
+		deliverable, err = isDeliverable(host, address)
+	}
 	if err != nil {
 		log.Fatal(err)
 	}

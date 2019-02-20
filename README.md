@@ -4,6 +4,10 @@
 
 Checks whether a single email address is deliverable.  Exits successfully if so.
 
+To install:
+
+    $ go get github.com/ransford/vrf
+
 Is `foo@bar.quux` a deliverable email address?
 
     $ vrf foo@bar.quux

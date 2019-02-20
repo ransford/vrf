@@ -33,7 +33,7 @@ func isDeliverable(host string, address string, timeout ...time.Duration) (bool,
 	var conn net.Conn
 	var err error
 
-	Trace.Printf("Connecting...")
+	trace.Printf("Connecting...")
 	if len(timeout) > 0 {
 		// We use a different Dialer if timeout is provided
 		conn, err = net.DialTimeout("tcp", host, timeout[0])
@@ -43,7 +43,7 @@ func isDeliverable(host string, address string, timeout ...time.Duration) (bool,
 
 	if err != nil {
 		if err, ok := err.(net.Error); ok && err.Timeout() {
-			return false, ErrTimeout
+			return false, errTimeout
 		}
 		return false, err
 	}
@@ -58,15 +58,15 @@ func isDeliverable(host string, address string, timeout ...time.Duration) (bool,
 	}
 	defer cli.Close()
 
-	Trace.Printf("Connected.")
-	Trace.Printf("MAIL FROM:<%s>", address)
+	trace.Printf("Connected.")
+	trace.Printf("MAIL FROM:<%s>", address)
 	err = cli.Mail(address)
 	if err != nil {
 		log.Printf("Error on MAIL: %s\n", err)
 		return false, err
 	}
 
-	Trace.Printf("RCPT TO:<%s>", address)
+	trace.Printf("RCPT TO:<%s>", address)
 	err = cli.Rcpt(address)
 	if err != nil {
 		rx := regexp.MustCompile("^(451|550) [0-9]\\.1\\.1")
@@ -82,14 +82,14 @@ func isDeliverable(host string, address string, timeout ...time.Duration) (bool,
 	// If RCPT succeeded, the server thinks the address is deliverable
 	deliverable = true
 
-	Trace.Printf("RSET")
+	trace.Printf("RSET")
 	err = cli.Reset()
 	if err != nil {
 		log.Printf("Error on RSET: %s\n", err)
 		return deliverable, err
 	}
 
-	Trace.Printf("QUIT")
+	trace.Printf("QUIT")
 	err = cli.Quit()
 	if err != nil {
 		log.Printf("Error on QUIT: %s\n", err)

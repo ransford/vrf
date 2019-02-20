@@ -13,15 +13,26 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"time"
 )
 
-var ErrTimeout = errors.New("Request timeout")
-var Trace *log.Logger
+var errTimeout = errors.New("Request timeout")
+var trace *log.Logger
+
+func setupLogging(verbose bool) {
+	// Set up verbose logging if required
+	var traceDest = ioutil.Discard
+
+	if verbose {
+		traceDest = os.Stderr
+	}
+	trace = log.New(traceDest, "INFO: ", log.LstdFlags)
+
+	log.SetOutput(os.Stderr)
+}
 
 func main() {
 	// Parse command-line flags
@@ -30,39 +41,31 @@ func main() {
 	timeoutPtr := flag.String("timeout", "", "Timeout after this duration (e.g. 3s)")
 	flag.Parse()
 
-	if *verbosePtr && *quietPtr {
-		log.Fatalf("Cannot be both quiet and verbose.")
-	}
-
-	// Set up verbose logging if required
-	var traceDest io.Writer
-	traceDest = ioutil.Discard
-	if *verbosePtr {
-		traceDest = os.Stderr
-	}
-	Trace = log.New(traceDest, "INFO: ", log.LstdFlags)
-
-	log.SetOutput(os.Stderr)
+	setupLogging(*verbosePtr)
 
 	args := flag.Args()
 	if len(args) != 1 {
 		log.Fatalf("Usage: %s <address>\n", os.Args[0])
 	}
 
+	if *verbosePtr && *quietPtr {
+		log.Fatalf("Cannot be both quiet and verbose.")
+	}
+
 	address := args[0]
-	Trace.Printf("Address: %s\n", address)
+	trace.Printf("Address: %s\n", address)
 
 	domain, err := getDomainFromAddress(address)
 	if err != nil {
 		log.Fatal(err)
 	}
-	Trace.Printf("Domain: %s\n", domain)
+	trace.Printf("Domain: %s\n", domain)
 
 	mxHost, err := firstMxFromDomain(domain)
 	if err != nil {
 		log.Fatal(err)
 	}
-	Trace.Printf("MX host: %s\n", mxHost)
+	trace.Printf("MX host: %s\n", mxHost)
 
 	host := fmt.Sprintf("%s:25", mxHost)
 	var deliverable bool

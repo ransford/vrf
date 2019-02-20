@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	Trace = log.New(os.Stdout, "INFO: ", log.LstdFlags)
+	trace = log.New(os.Stdout, "INFO: ", log.LstdFlags)
 }
 
 func TestAddressParse(t *testing.T) {
@@ -72,7 +72,7 @@ func TestDialTimeout(t *testing.T) {
 		}()
 
 		_, err := isDeliverable(host+":25", addr, funcTimeout)
-		if err == ErrTimeout {
+		if err == errTimeout {
 			exit <- struct{}{}
 			passed = true
 			return

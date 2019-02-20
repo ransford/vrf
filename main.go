@@ -1,12 +1,22 @@
 /*
- * vrf tests whether a given email address is likely to be deliverable.
- *
- * To test whether an address is deliverable, i.e., whether it's a "valid" email address that can
- * receive email, vrf finds an email server responsible for the domain, then conncts to that server
- * and follows *most* of the protocol to deliver an email message, up to the point at which a
- * message is actually delivered.
- */
+vrf tests whether a given email address is likely to be deliverable.
 
+To test whether an address is deliverable, i.e., whether it's a "valid" email
+address that can receive email, vrf finds an email server responsible for the
+domain, then conncts to that server and follows *most* of the protocol to
+deliver an email message, up to the point at which a message is actually
+delivered.
+
+ $ vrf good.guess@nowhere.biz
+ good.guess@nowhere.biz is deliverable
+
+ $ vrf bad.guess@nowhere.biz
+ bad.guess@nowhere.biz is not deliverable
+
+ # exits with 0 if deliverable, 1 otherwise.
+ $ vrf -quiet good.guess@nowhere.biz && echo "good guess!"
+ good guess!
+*/
 package main
 
 import (

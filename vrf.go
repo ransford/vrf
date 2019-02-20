@@ -57,7 +57,7 @@ func main() {
 
 	domain, err := getDomainFromAddress(address)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Invalid email address.")
 	}
 	trace.Printf("Domain: %s\n", domain)
 

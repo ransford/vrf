@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/mail"
 	"net/smtp"
 	"regexp"
 	"strings"
@@ -20,10 +21,24 @@ func firstMxFromDomain(domain string) (string, error) {
 	return mxs[0].Host, nil
 }
 
+func normalizeAddress(address string) (*mail.Address, error) {
+	parser := new(mail.AddressParser)
+	addr, err := parser.Parse(address)
+	if err != nil {
+		return nil, err
+	}
+
+	return addr, nil
+}
+
 func getDomainFromAddress(address string) (string, error) {
-	at := strings.LastIndex(address, "@")
+	addr, err := normalizeAddress(address)
+	if err != nil {
+		return "", err
+	}
+	at := strings.LastIndex(addr.Address, "@")
 	if at < 0 {
-		return "", fmt.Errorf("Cannot parse address")
+		return "", fmt.Errorf("No @domain in address")
 	}
 	return address[at+1:], nil
 }

@@ -20,7 +20,7 @@ func TestDialTimeout(t *testing.T) {
 	// Timeouts: I'm not sue if this is too much time?
 	funcTimeout := time.Second
 
-	// If the timeout fails, we impose a slighly higher timeout
+	// If the timeout fails, we impose a slightly higher timeout
 	// to this test so it doesn't block forever.
 	testTimeout := time.Second * 2
 

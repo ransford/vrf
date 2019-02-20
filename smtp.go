@@ -43,6 +43,7 @@ func getDomainFromAddress(address string) (string, error) {
 	return address[at+1:], nil
 }
 
+// Decide whether a given address is deliverable at a given MX host, with optional timeout.
 func isDeliverable(host string, address string, timeout ...time.Duration) (bool, error) {
 	deliverable := false
 	var conn net.Conn

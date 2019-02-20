@@ -37,19 +37,19 @@ func setupLogging(verbose bool) {
 func main() {
 	// Parse command-line flags
 	verbosePtr := flag.Bool("verbose", false, "Show verbose messages")
-	quietPtr := flag.Bool("quiet", false, "Quiet (no output)")
-	timeoutPtr := flag.String("timeout", "", "Timeout after this duration (e.g. 3s)")
+	quietPtr := flag.Bool("quiet", false, "Quiet (no output; exit value reflects success)")
+	timeoutPtr := flag.String("timeout", "", "Timeout after this duration (e.g., 3s)")
 	flag.Parse()
+
+	if *verbosePtr && *quietPtr {
+		log.Fatalf("Cannot be both quiet and verbose.")
+	}
 
 	setupLogging(*verbosePtr)
 
 	args := flag.Args()
 	if len(args) != 1 {
 		log.Fatalf("Usage: %s <address>\n", os.Args[0])
-	}
-
-	if *verbosePtr && *quietPtr {
-		log.Fatalf("Cannot be both quiet and verbose.")
 	}
 
 	address := args[0]
@@ -72,7 +72,7 @@ func main() {
 	if *timeoutPtr != "" {
 		timeout, err := time.ParseDuration(*timeoutPtr)
 		if err != nil {
-			log.Fatal("Invalid duration. Use something like 2s, 1m etc.")
+			log.Fatal("Invalid duration. Use something like 2s, 1m, etc.")
 		}
 		deliverable, err = isDeliverable(host, address, timeout)
 	} else {

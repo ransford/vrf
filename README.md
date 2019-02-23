@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ransford/vrf.svg?branch=master)](https://travis-ci.org/ransford/vrf) [![Go Report Card](https://goreportcard.com/badge/github.com/ransford/vrf)](https://goreportcard.com/report/github.com/ransford/vrf)
+[![CircleCI](https://circleci.com/gh/ransford/vrf.svg?style=svg)](https://circleci.com/gh/ransford/vrf) [![Go Report Card](https://goreportcard.com/badge/github.com/ransford/vrf)](https://goreportcard.com/report/github.com/ransford/vrf)
 
 # vrf: An SMTP Address Verifier
 

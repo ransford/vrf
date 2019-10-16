@@ -18,12 +18,9 @@ func TestNormalizeAddress(t *testing.T) {
 	}
 
 	for _, addr := range goodAddrs {
-		addrObj, err := normalizeAddress(addr.rfc5322)
+		addrObj, err := NewEmailAddress(addr.rfc5322)
 		if err != nil {
 			t.Fatalf("Failed to parse valid RFC5322 string %s: %v", addr.rfc5322, err)
-		}
-		if addrObj.Name != addr.name {
-			t.Fatal("Name mismatch")
 		}
 		if addrObj.Address != addr.addr {
 			t.Fatal("Address mismatch")
@@ -33,7 +30,7 @@ func TestNormalizeAddress(t *testing.T) {
 
 func TestAddressParse(t *testing.T) {
 	/* No errors on good addresses */
-	addrs := []struct {
+	cases := []struct {
 		addr   string
 		domain string
 	}{
@@ -41,10 +38,13 @@ func TestAddressParse(t *testing.T) {
 		{"p@grrransford.org", "grrransford.org"},
 		{"Foo Bar <foo@bar.info>", "bar.info"},
 	}
-	for _, tcase := range addrs {
-		_, err := getDomainFromAddress(tcase.addr)
+	for _, tcase := range cases {
+		addr, err := NewEmailAddress(tcase.addr)
 		if err != nil {
-			t.Fatalf("Failed to parse valid RFC5322 address %s: %v", tcase.addr, err)
+			t.Error(err)
+		}
+		if tcase.domain != addr.Domain() {
+			t.Error("parse domain")
 		}
 	}
 
@@ -60,9 +60,9 @@ func TestAddressParse(t *testing.T) {
 		"",
 	}
 	for _, badaddr := range badAddrs {
-		_, err := getDomainFromAddress(badaddr)
+		_, err := NewEmailAddress(badaddr)
 		if err == nil {
-			t.Fatal("err is nil; shoul be non-nil")
+			t.Fatal("err is nil; should be non-nil")
 		}
 	}
 }

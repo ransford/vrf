@@ -15,6 +15,11 @@ func TestDialTimeout(t *testing.T) {
 	host := "spacedecode.com"
 	addr := "foo@" + host
 
+	email, err := NewEmailAddress(addr)
+	if err != nil {
+		t.Fail()
+	}
+
 	passed := false
 
 	// Timeouts: I'm not sue if this is too much time?
@@ -37,7 +42,7 @@ func TestDialTimeout(t *testing.T) {
 			}
 		}()
 
-		_, err := isDeliverable(host+":25", addr, funcTimeout)
+		_, err := email.IsDeliverable(host+":25", funcTimeout)
 		if err == errTimeout {
 			exit <- struct{}{}
 			passed = true

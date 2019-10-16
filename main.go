@@ -62,16 +62,12 @@ func main() {
 		log.Fatalf("Usage: %s <address>\n", os.Args[0])
 	}
 
-	address := args[0]
-	trace.Printf("Address: %s\n", address)
-
-	domain, err := getDomainFromAddress(address)
+	address, err := NewEmailAddress(args[0])
 	if err != nil {
-		log.Fatalf("Invalid email address.")
+		trace.Fatal(err)
 	}
-	trace.Printf("Domain: %s\n", domain)
 
-	mxHost, err := firstMxFromDomain(domain)
+	mxHost, err := address.FirstMX()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -84,9 +80,9 @@ func main() {
 		if err != nil {
 			log.Fatal("Invalid duration. Use something like 2s, 1m, etc.")
 		}
-		deliverable, err = isDeliverable(host, address, timeout)
+		deliverable, err = address.IsDeliverable(host, timeout)
 	} else {
-		deliverable, err = isDeliverable(host, address)
+		deliverable, err = address.IsDeliverable(host)
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -94,12 +90,12 @@ func main() {
 
 	if deliverable {
 		if !*quietPtr {
-			fmt.Println(address, "is deliverable")
+			fmt.Println(address.Address, "is deliverable")
 		}
 		os.Exit(0)
 	} else {
 		if !*quietPtr {
-			fmt.Println(address, "is not deliverable")
+			fmt.Println(address.Address, "is not deliverable")
 		}
 		os.Exit(1)
 	}

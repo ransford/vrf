@@ -1,8 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"errors"
 	"log"
+	"math/rand"
 	"net"
 	"net/mail"
 	"net/smtp"
@@ -11,40 +12,66 @@ import (
 	"time"
 )
 
-func firstMxFromDomain(domain string) (string, error) {
-	mxs, err := net.LookupMX(domain)
+// EmailAddress is an email address to test for deliverability.
+type EmailAddress struct {
+	Address string
+	domain  string
+}
+
+// NewEmailAddress returns a validated email address
+func NewEmailAddress(address string) (*EmailAddress, error) {
+	parser := &mail.AddressParser{}
+	addr, err := parser.Parse(address)
+	if err != nil {
+		return nil, err
+	}
+
+	parts := strings.SplitN(addr.Address, "@", 2)
+	if len(parts) != 2 {
+		return nil, errors.New("Not enough parts in address")
+	}
+	return &EmailAddress{
+		Address: addr.Address,
+		domain:  parts[1],
+	}, nil
+}
+
+// RandomMX returns a random mail exchanger for this address's domain name.
+func (e *EmailAddress) RandomMX() (string, error) {
+	mxs, err := net.LookupMX(e.domain)
 	if err != nil {
 		return "", err
+	}
+	if len(mxs) == 0 {
+		return "", errors.New("no MX for domain")
+	}
+
+	return mxs[rand.Intn(len(mxs))].Host, nil
+}
+
+// FirstMX returns the first (highest-priority) mail exchanger for this
+// address's domain name.
+func (e *EmailAddress) FirstMX() (string, error) {
+	mxs, err := net.LookupMX(e.domain)
+	if err != nil {
+		return "", err
+	}
+	if len(mxs) == 0 {
+		return "", errors.New("no MX for domain")
 	}
 
 	// Return the first MX
 	return mxs[0].Host, nil
 }
 
-func normalizeAddress(address string) (*mail.Address, error) {
-	parser := new(mail.AddressParser)
-	addr, err := parser.Parse(address)
-	if err != nil {
-		return nil, err
-	}
-
-	return addr, nil
+// Domain extracts the domain part of an EmailAddress.
+func (e *EmailAddress) Domain() string {
+	return e.domain
 }
 
-func getDomainFromAddress(address string) (string, error) {
-	addr, err := normalizeAddress(address)
-	if err != nil {
-		return "", err
-	}
-	at := strings.LastIndex(addr.Address, "@")
-	if at < 0 {
-		return "", fmt.Errorf("No @domain in address")
-	}
-	return address[at+1:], nil
-}
-
-// Decide whether a given address is deliverable at a given MX host, with optional timeout.
-func isDeliverable(host string, address string, timeout ...time.Duration) (bool, error) {
+// IsDeliverable returns true if a given address is deliverable at a given MX
+// host, with optional timeout; false otherwise.
+func (e *EmailAddress) IsDeliverable(host string, timeout ...time.Duration) (bool, error) {
 	deliverable := false
 	var conn net.Conn
 	var err error
@@ -66,7 +93,7 @@ func isDeliverable(host string, address string, timeout ...time.Duration) (bool,
 
 	// We need the address without the port to create
 	// the instance of the client.
-	hostNoPort, _, _ := net.SplitHostPort(address)
+	hostNoPort, _, _ := net.SplitHostPort(e.Address)
 	cli, err := smtp.NewClient(conn, hostNoPort)
 	if err != nil {
 		log.Printf("Error on connect: %s\n", err)
@@ -75,15 +102,15 @@ func isDeliverable(host string, address string, timeout ...time.Duration) (bool,
 	defer cli.Close()
 
 	trace.Printf("Connected.")
-	trace.Printf("MAIL FROM:<%s>", address)
-	err = cli.Mail(address)
+	trace.Printf("MAIL FROM:<%s>", e.Address)
+	err = cli.Mail(e.Address)
 	if err != nil {
 		log.Printf("Error on MAIL: %s\n", err)
 		return false, err
 	}
 
-	trace.Printf("RCPT TO:<%s>", address)
-	err = cli.Rcpt(address)
+	trace.Printf("RCPT TO:<%s>", e.Address)
+	err = cli.Rcpt(e.Address)
 	if err != nil {
 		rx := regexp.MustCompile("^(451|550) [0-9]\\.1\\.1")
 
@@ -113,4 +140,8 @@ func isDeliverable(host string, address string, timeout ...time.Duration) (bool,
 	}
 
 	return deliverable, nil
+}
+
+func init() {
+	rand.Seed(time.Now().Unix())
 }

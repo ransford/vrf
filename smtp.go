@@ -71,15 +71,15 @@ func (e *EmailAddress) Domain() string {
 
 // IsDeliverable returns true if a given address is deliverable at a given MX
 // host, with optional timeout; false otherwise.
-func (e *EmailAddress) IsDeliverable(host string, timeout ...time.Duration) (bool, error) {
+func (e *EmailAddress) IsDeliverable(host string, timeout time.Duration) (bool, error) {
 	deliverable := false
 	var conn net.Conn
 	var err error
 
 	trace.Printf("Connecting...")
-	if len(timeout) > 0 {
+	if timeout > 0 {
 		// We use a different Dialer if timeout is provided
-		conn, err = net.DialTimeout("tcp", host, timeout[0])
+		conn, err = net.DialTimeout("tcp", host, timeout)
 	} else {
 		conn, err = net.Dial("tcp", host)
 	}

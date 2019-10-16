@@ -48,7 +48,7 @@ func main() {
 	// Parse command-line flags
 	verbosePtr := flag.Bool("verbose", false, "Show verbose messages")
 	quietPtr := flag.Bool("quiet", false, "Quiet (no output; exit value reflects success)")
-	timeoutPtr := flag.String("timeout", "", "Timeout after this duration (e.g., 3s)")
+	timeoutPtr := flag.Duration("timeout", 10*time.Second, "Connect timeout")
 	flag.Parse()
 
 	if *verbosePtr && *quietPtr {
@@ -74,16 +74,7 @@ func main() {
 	trace.Printf("MX host: %s\n", mxHost)
 
 	host := fmt.Sprintf("%s:25", mxHost)
-	var deliverable bool
-	if *timeoutPtr != "" {
-		timeout, err := time.ParseDuration(*timeoutPtr)
-		if err != nil {
-			log.Fatal("Invalid duration. Use something like 2s, 1m, etc.")
-		}
-		deliverable, err = address.IsDeliverable(host, timeout)
-	} else {
-		deliverable, err = address.IsDeliverable(host)
-	}
+	deliverable, err := address.IsDeliverable(host, *timeoutPtr)
 	if err != nil {
 		log.Fatal(err)
 	}

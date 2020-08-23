@@ -29,7 +29,7 @@ import (
 	"time"
 )
 
-var errTimeout = errors.New("Request timeout")
+var errTimeout = errors.New("request timeout")
 var trace *log.Logger
 
 func setupLogging(verbose bool) {

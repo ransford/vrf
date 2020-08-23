@@ -31,8 +31,7 @@ func TestDialTimeout(t *testing.T) {
 	go func() {
 		go func() {
 			ticker := time.NewTicker(testTimeout)
-			select {
-			case <-ticker.C:
+			for range ticker.C {
 				exit <- struct{}{}
 			}
 		}()

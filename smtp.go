@@ -38,7 +38,7 @@ func getDomainFromAddress(address string) (string, error) {
 	}
 	at := strings.LastIndex(addr.Address, "@")
 	if at < 0 {
-		return "", fmt.Errorf("No @domain in address")
+		return "", fmt.Errorf("no @domain in address")
 	}
 	return address[at+1:], nil
 }
@@ -85,7 +85,7 @@ func isDeliverable(host string, address string, timeout ...time.Duration) (bool,
 	trace.Printf("RCPT TO:<%s>", address)
 	err = cli.Rcpt(address)
 	if err != nil {
-		rx := regexp.MustCompile("^(451|550) [0-9]\\.1\\.1")
+		rx := regexp.MustCompile(`^(451|550) [0-9]\.1\.1`)
 
 		// SMTP 550 X.1.1 means invalid address, but other errors mean other things
 		if !rx.MatchString(err.Error()) {
